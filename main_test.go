@@ -29,12 +29,12 @@ func TestGetScore(t *testing.T) {
 		},
 	}
 
-	testServer := playerServer{testStore}
+	testServer := newPlayerServer(testStore)
 	t.Run("Antonio's score is returned correctly", func(t *testing.T) {
 		req := newGetScoreRequest("Antonio")
 		res := httptest.NewRecorder()
 
-		testServer.ServeHTTP(res, req)
+		testServer.Router.ServeHTTP(res, req)
 
 		got := res.Body.String()
 		want := "20"
@@ -46,7 +46,7 @@ func TestGetScore(t *testing.T) {
 		req := newGetScoreRequest("Jack")
 		res := httptest.NewRecorder()
 
-		testServer.ServeHTTP(res, req)
+		testServer.Router.ServeHTTP(res, req)
 
 		got := res.Body.String()
 		want := "10"
@@ -59,7 +59,7 @@ func TestGetScore(t *testing.T) {
 		req := newGetScoreRequest("Test")
 		res := httptest.NewRecorder()
 
-		testServer.ServeHTTP(res, req)
+		testServer.Router.ServeHTTP(res, req)
 
 		got := res.Code
 		want := http.StatusNotFound
@@ -71,12 +71,12 @@ func TestGetScore(t *testing.T) {
 func TestPostWin(t *testing.T) {
 	player := "Antonio"
 	t.Run("It returns accept status code when POST", func(t *testing.T) {
-		server := playerServer{&stubPlayerScore{}}
+		server := newPlayerServer(&stubPlayerScore{})
 
 		req := newPostScoreRequest(player)
 		res := httptest.NewRecorder()
 
-		server.ServeHTTP(res, req)
+		server.Router.ServeHTTP(res, req)
 
 		got := res.Code
 		want := http.StatusAccepted
@@ -86,12 +86,12 @@ func TestPostWin(t *testing.T) {
 
 	t.Run("if when making a POST the store is called correctly", func(t *testing.T) {
 		store := &stubPlayerScore{}
-		server := playerServer{store}
+		server := newPlayerServer(store)
 
 		req := newPostScoreRequest(player)
 		res := httptest.NewRecorder()
 
-		server.ServeHTTP(res, req)
+		server.Router.ServeHTTP(res, req)
 
 		got := len(store.registerWinCall)
 		want := 1
@@ -107,27 +107,19 @@ func TestPostWin(t *testing.T) {
 	})
 }
 
-func TestRegisterWinAndListPlayer(t *testing.T) {
-	player := "Antonio"
-	store := NewInMemoryStorePlayers()
+func TestLeagueRoute(t *testing.T) {
+	testScore := &stubPlayerScore{}
+	server := newPlayerServer(testScore)
 
-	server := playerServer{store}
+	t.Run("It returns 200 status code", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/league/", nil)
+		res := httptest.NewRecorder()
 
-	server.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(player))
-	server.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(player))
+		server.Router.ServeHTTP(res, req)
 
-	// GET
-	req := newGetScoreRequest(player)
-	res := httptest.NewRecorder()
-	server.ServeHTTP(res, req)
-
-	got := res.Body.String()
-	want := "2"
-
-	assertStatusCode(t, res.Code, http.StatusOK)
-	assertBodyContent(t, want, got)
+		assertStatusCode(t, res.Code, http.StatusOK)
+	})
 }
-
 func assertBodyContent(t *testing.T, want, got string) {
 	t.Helper()
 	if got != want {

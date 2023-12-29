@@ -13,10 +13,24 @@ type playersStore interface {
 }
 
 type playerServer struct {
-	Store playersStore
+	Store  playersStore
+	Router http.Handler
 }
 
-func (p *playerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func newPlayerServer(store playersStore) *playerServer {
+	router := http.NewServeMux()
+	p := new(playerServer)
+	p.Store = store
+
+	router.Handle("/players/", http.HandlerFunc(p.playersHandle))
+	router.Handle("/league/", http.HandlerFunc(p.leagueHandle))
+
+	p.Router = router
+
+	return p
+}
+
+func (p *playerServer) playersHandle(w http.ResponseWriter, r *http.Request) {
 	player := strings.TrimPrefix(r.URL.Path, "/players/")
 
 	switch r.Method {
@@ -42,6 +56,10 @@ func (p *playerServer) registerWin(w http.ResponseWriter, player string) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+func (p *playerServer) leagueHandle(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
 type InMemoryStorePlayers struct {
 	score map[string]int
 }
@@ -59,9 +77,9 @@ func (i *InMemoryStorePlayers) storeWin(name string) {
 }
 
 func main() {
-	server := &playerServer{NewInMemoryStorePlayers()}
+	server := newPlayerServer(NewInMemoryStorePlayers())
 
-	if err := http.ListenAndServe(":8080", server); err != nil {
+	if err := http.ListenAndServe(":8080", server.Router); err != nil {
 		log.Fatal(err)
 	}
 }
