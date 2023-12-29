@@ -8,21 +8,42 @@ import (
 
 func TestRegisterWinAndListPlayer(t *testing.T) {
 	player := "Antonio"
-	store := NewInMemoryStorePlayers()
 
+	store := NewInMemoryStorePlayers()
 	server := newPlayerServer(store)
 
 	server.Router.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(player))
 	server.Router.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(player))
+	server.Router.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(player))
 
-	// GET
-	req := newGetScoreRequest(player)
-	res := httptest.NewRecorder()
-	server.Router.ServeHTTP(res, req)
+	t.Run("get Score", func(t *testing.T) {
+		req := newGetScoreRequest(player)
+		res := httptest.NewRecorder()
+		server.Router.ServeHTTP(res, req)
 
-	got := res.Body.String()
-	want := "2"
+		got := res.Body.String()
+		want := "3"
 
-	assertStatusCode(t, res.Code, http.StatusOK)
-	assertBodyContent(t, want, got)
+		assertStatusCode(t, res.Code, http.StatusOK)
+		assertBodyContent(t, want, got)
+	})
+
+	t.Run("get League", func(t *testing.T) {
+		req := newGetLeagueRequest()
+		res := httptest.NewRecorder()
+
+		server.Router.ServeHTTP(res, req)
+
+		assertStatusCode(t, res.Code, http.StatusOK)
+
+		want := []Player{
+			{"Antonio", 3},
+		}
+		got := getLeagueFromBody(t, res.Body)
+
+		assertResponseContentType(t, res.Header().Get("content-type"), "application/json")
+		assertLeague(t, want, got)
+
+	})
+
 }
