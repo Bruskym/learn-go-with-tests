@@ -1,4 +1,4 @@
-package main
+package poker
 
 import (
 	"net/http"
@@ -9,8 +9,11 @@ import (
 func TestRegisterWinAndListPlayer(t *testing.T) {
 	player := "Antonio"
 
-	store := NewInMemoryStorePlayers()
-	server := newPlayerServer(store)
+	database, clearDatabase := createTempFile(t, "")
+	defer clearDatabase()
+
+	store := NewFileSystemStore(database)
+	server := NewPlayerServer(store)
 
 	server.Router.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(player))
 	server.Router.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(player))

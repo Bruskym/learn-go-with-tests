@@ -1,4 +1,4 @@
-package main
+package poker
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 type playersStore interface {
 	getScore(name string) int
 	storeWin(name string)
-	getLeague() []Player
+	getLeague() League
 }
 
 type Player struct {
@@ -24,7 +24,7 @@ type playerServer struct {
 	Router http.Handler
 }
 
-func newPlayerServer(store playersStore) *playerServer {
+func NewPlayerServer(store playersStore) *playerServer {
 	router := http.NewServeMux()
 	p := new(playerServer)
 	p.Store = store

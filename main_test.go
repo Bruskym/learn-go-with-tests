@@ -1,4 +1,4 @@
-package main
+package poker
 
 import (
 	"encoding/json"
@@ -24,7 +24,7 @@ func (s *stubPlayerScore) storeWin(name string) {
 	s.registerWinCall = append(s.registerWinCall, name)
 }
 
-func (s *stubPlayerScore) getLeague() []Player {
+func (s *stubPlayerScore) getLeague() League {
 	return s.league
 }
 
@@ -37,7 +37,7 @@ func TestGetScore(t *testing.T) {
 		},
 	}
 
-	testServer := newPlayerServer(testStore)
+	testServer := NewPlayerServer(testStore)
 	t.Run("Antonio's score is returned correctly", func(t *testing.T) {
 		req := newGetScoreRequest("Antonio")
 		res := httptest.NewRecorder()
@@ -79,7 +79,7 @@ func TestGetScore(t *testing.T) {
 func TestPostWin(t *testing.T) {
 	player := "Antonio"
 	t.Run("It returns accept status code when POST", func(t *testing.T) {
-		server := newPlayerServer(&stubPlayerScore{})
+		server := NewPlayerServer(&stubPlayerScore{})
 
 		req := newPostScoreRequest(player)
 		res := httptest.NewRecorder()
@@ -94,7 +94,7 @@ func TestPostWin(t *testing.T) {
 
 	t.Run("if when making a POST the store is called correctly", func(t *testing.T) {
 		store := &stubPlayerScore{}
-		server := newPlayerServer(store)
+		server := NewPlayerServer(store)
 
 		req := newPostScoreRequest(player)
 		res := httptest.NewRecorder()
@@ -122,7 +122,7 @@ func TestLeagueRoute(t *testing.T) {
 	}
 
 	testScore := &stubPlayerScore{league: wantedLeague}
-	server := newPlayerServer(testScore)
+	server := NewPlayerServer(testScore)
 
 	t.Run("It returns 200 status code on /league/", func(t *testing.T) {
 		req := newGetLeagueRequest()
