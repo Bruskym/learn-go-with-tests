@@ -12,7 +12,18 @@ func TestFileStore(t *testing.T) {
 	]`)
 
 	defer cleanDatabase()
-	store := NewFileSystemStore(database)
+	store, err := NewFileSystemStore(database)
+	assertError(t, err)
+
+	t.Run("create store with empty file", func(t *testing.T) {
+		database, cleanDatabase := createTempFile(t, "")
+		defer cleanDatabase()
+
+		_, err := NewFileSystemStore(database)
+
+		assertError(t, err)
+	})
+
 	t.Run("get league from database", func(t *testing.T) {
 
 		got := store.getLeague()
@@ -81,4 +92,11 @@ func createTempFile(t *testing.T, initialData string) (*os.File, func()) {
 
 	return tempFile, removeFile
 
+}
+
+func assertError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Errorf("No errors were expected, but %v", err)
+	}
 }

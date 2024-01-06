@@ -16,7 +16,12 @@ func main() {
 		log.Fatalf("unable to open the file. %v", err)
 	}
 
-	store := poker.NewFileSystemStore(file)
+	store, err := poker.NewFileSystemStore(file)
+
+	if err != nil {
+		log.Fatalf("unable to create storage system. %v", err)
+	}
+
 	server := poker.NewPlayerServer(store)
 
 	if err := http.ListenAndServe(":8000", server.Router); err != nil {

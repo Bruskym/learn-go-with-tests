@@ -2,6 +2,7 @@ package poker
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -10,11 +11,37 @@ type FileSystemStore struct {
 	league League
 }
 
-func NewFileSystemStore(database *os.File) *FileSystemStore {
-	database.Seek(0, 0)
+func NewFileSystemStore(database *os.File) (*FileSystemStore, error) {
+	err := initialiseDBFile(database)
 
-	league, _ := NewLeague(database)
-	return &FileSystemStore{*json.NewEncoder(&Tape{database}), league}
+	if err != nil {
+		return nil, fmt.Errorf("error getting information about file %v", err)
+	}
+
+	league, err := NewLeague(database)
+
+	if err != nil {
+		return nil, fmt.Errorf("problem loading file player storage: %v", err)
+	}
+
+	return &FileSystemStore{*json.NewEncoder(&Tape{database}), league}, nil
+}
+
+func initialiseDBFile(dbFile *os.File) error {
+	dbFile.Seek(0, 0)
+
+	fileStats, err := os.Stat(dbFile.Name())
+
+	if err != nil {
+		return fmt.Errorf("error getting information about file %v", err)
+	}
+
+	if fileStats.Size() == 0 {
+		dbFile.Write([]byte("[]"))
+		dbFile.Seek(0, 0)
+	}
+
+	return nil
 }
 
 func (f *FileSystemStore) getLeague() League {

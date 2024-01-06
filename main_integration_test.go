@@ -9,10 +9,12 @@ import (
 func TestRegisterWinAndListPlayer(t *testing.T) {
 	player := "Antonio"
 
-	database, clearDatabase := createTempFile(t, "")
+	database, clearDatabase := createTempFile(t, "[]")
 	defer clearDatabase()
 
-	store := NewFileSystemStore(database)
+	store, err := NewFileSystemStore(database)
+	assertError(t, err)
+
 	server := NewPlayerServer(store)
 
 	server.Router.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(player))
